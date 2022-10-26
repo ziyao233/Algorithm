@@ -1,3 +1,8 @@
+/*
+ *	Refer to my blog: https://url/Luogu_P1880.html
+ *	for details
+ */
+
 #include<assert.h>
 #include<stdio.h>
 #include<stdlib.h>
@@ -23,21 +28,35 @@ static int max_solution(int l,int r)
 {
 	if (l == r)
 		return 0;
+
+	static int mem[MAXNUM][MAXNUM];		// Automatically set to zero
+	if (mem[l][r])				// Already calculated
+		return mem[l][r];
 	int ans = 0;
-	for (int cut = l;cut < r;cut++)
+	/*
+	 *	cut is the position where we split the interval
+	 *	For an interval with length k, we could split it at k - 1
+	 *	different positions.
+	 */
+	for (int cut = l;cut < r;cut++)	
 		ans = max(max_solution(l,cut) + max_solution(cut + 1,r),ans);
-	return ans + stoneSum[l][r];
+
+	return mem[l][r] = ans + stoneSum[l][r];
 }
 
 static int min_solution(int l,int r)
 {
 	if (l == r)
 		return 0;
-	// int ans = 1145141919810;
+
+	static int mem[MAXNUM][MAXNUM];
+	if (mem[l][r])
+		return mem[l][r];
+	// int ans = 1145141919810; OVERFLOW :(
 	int ans = INT_MAX;
 	for (int cut = l;cut < r;cut++)
 		ans = min(min_solution(l,cut) + min_solution(cut + 1,r),ans);
-	return ans + stoneSum[l][r];
+	return mem[l][r] = ans + stoneSum[l][r];
 }
 
 
@@ -50,14 +69,18 @@ int main(void)
 		stoneNum[i + num] = stoneNum[i];
 		stoneSum[i][i] = stoneNum[i];
 		stoneSum[i + num][i + num] = stoneNum[i];
-		for (int j = 0;j < i;j++) {
-			stoneSum[j][i] = stoneSum[j][i - 1] + stoneNum[i];
-			stoneSum[j + num][i + num] = stoneSum[j + num][i + num - 1] + stoneNum[i + num];
-		}
+	}
+
+	/*
+	 *	Calcutate the summaries, less memory could be used.
+	 */
+	for (int l = 0;l < (num << 1);l++) {
+		for (int r = l + 1;r < (num << 1);r++)
+			stoneSum[l][r] = stoneSum[l][r - 1] + stoneNum[r];
 	}
 
 	int minPrice = INT_MAX,maxPrice = 0;
-	for (int i = 0;i < num << 1;i++) {
+	for (int i = 0;i < num;i++) {
 		minPrice = min(minPrice,min_solution(i,i + num - 1));
 		maxPrice = max(maxPrice,max_solution(i,i + num - 1));
 	}
